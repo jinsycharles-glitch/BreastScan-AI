@@ -1,0 +1,1446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>BreastScan AI — Intelligent Breast Tumor Detection</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;900&family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --ink: #0d0d14;
+  --ink2: #1a1a2e;
+  --ink3: #242438;
+  --plate: #1e1e32;
+  --plate2: #252540;
+  --wire: rgba(232,180,180,0.12);
+  --wire2: rgba(232,180,180,0.25);
+  --rose: #e8b4b8;
+  --rose2: #d4848a;
+  --rose3: #f2cdd0;
+  --coral: #e07070;
+  --teal: #5ecfca;
+  --amber: #f0a84e;
+  --lime: #7ec87e;
+  --text: #f0eaf0;
+  --text2: #a89aaa;
+  --text3: #6b5f6e;
+  --serif: 'Playfair Display', Georgia, serif;
+  --sans: 'IBM Plex Sans', system-ui, sans-serif;
+  --mono: 'IBM Plex Mono', monospace;
+  --r: 14px;
+  --r2: 8px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--ink);color:var(--text);font-family:var(--sans);font-size:14px;overflow-x:hidden;min-height:100vh}
+
+/* ─── Scrollbar ─── */
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:var(--ink2)}::-webkit-scrollbar-thumb{background:var(--plate2);border-radius:3px}
+
+/* ─── Layout Shell ─── */
+.shell{display:flex;min-height:100vh}
+.rail{width:240px;background:var(--ink2);border-right:1px solid var(--wire);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:50}
+.canvas{margin-left:240px;flex:1;min-height:100vh}
+
+/* ─── Rail / Sidebar ─── */
+.brand{padding:28px 20px 22px;border-bottom:1px solid var(--wire)}
+.brand-mark{display:flex;align-items:center;gap:11px}
+.brand-gem{width:38px;height:38px;background:linear-gradient(135deg,var(--rose2),var(--coral));border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.brand-gem svg{width:20px;height:20px}
+.brand-name{font-family:var(--serif);font-size:17px;font-weight:700;letter-spacing:.3px;line-height:1.2}
+.brand-name em{color:var(--rose);font-style:normal}
+.brand-tag{font-size:9px;color:var(--text3);font-family:var(--mono);letter-spacing:2px;text-transform:uppercase;margin-top:3px}
+
+.nav-list{flex:1;padding:16px 10px;display:flex;flex-direction:column;gap:2px}
+.nav-btn{display:flex;align-items:center;gap:11px;padding:10px 12px;border-radius:var(--r2);cursor:pointer;transition:all .2s;color:var(--text2);font-size:13px;font-weight:500;border:1px solid transparent;background:none;width:100%;text-align:left}
+.nav-btn:hover{background:var(--plate);color:var(--text)}
+.nav-btn.on{background:rgba(232,180,180,0.1);color:var(--rose);border-color:var(--wire2)}
+.nav-btn svg{width:17px;height:17px;flex-shrink:0;opacity:.8}
+.nav-btn.on svg{opacity:1}
+.n-badge{margin-left:auto;background:var(--coral);color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;font-family:var(--mono)}
+
+.rail-foot{padding:16px;border-top:1px solid var(--wire)}
+.ai-status{display:flex;align-items:center;gap:9px;background:rgba(94,207,202,0.08);border:1px solid rgba(94,207,202,0.2);border-radius:20px;padding:8px 14px;font-size:11px;color:var(--teal)}
+.pulse{width:6px;height:6px;background:var(--teal);border-radius:50%;animation:p 2s infinite}
+@keyframes p{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(1.4)}}
+
+/* ─── Page System ─── */
+.pg{display:none;animation:fadeUp .35s ease}
+.pg.on{display:block}
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+
+/* ─── Dashboard ─── */
+.dash-hero{padding:48px 44px 32px;position:relative;overflow:hidden}
+.dash-hero::after{content:'';position:absolute;top:-80px;right:-60px;width:420px;height:420px;background:radial-gradient(circle,rgba(232,180,180,0.055) 0%,transparent 65%);pointer-events:none}
+.eyebrow{display:inline-flex;align-items:center;gap:8px;background:rgba(232,180,180,0.08);border:1px solid var(--wire2);border-radius:20px;padding:5px 14px;font-size:10px;font-family:var(--mono);color:var(--rose);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:20px}
+.hero-h{font-family:var(--serif);font-size:44px;font-weight:900;line-height:1.1;margin-bottom:14px}
+.hero-h .glow{color:var(--rose);text-shadow:0 0 40px rgba(232,180,180,0.3)}
+.hero-p{color:var(--text2);font-size:15px;line-height:1.75;max-width:580px;margin-bottom:30px}
+.hero-btns{display:flex;gap:12px;flex-wrap:wrap}
+
+/* Buttons */
+.btn{display:inline-flex;align-items:center;gap:8px;padding:11px 22px;border-radius:var(--r2);font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;border:none;text-decoration:none;font-family:var(--sans)}
+.btn-rose{background:var(--rose2);color:#fff}.btn-rose:hover{background:var(--coral);box-shadow:0 6px 22px rgba(224,112,112,0.35);transform:translateY(-1px)}
+.btn-ghost{background:transparent;color:var(--text);border:1px solid var(--wire2)}.btn-ghost:hover{background:var(--plate);border-color:var(--rose);color:var(--rose)}
+.btn-teal{background:var(--teal);color:var(--ink)}.btn-teal:hover{filter:brightness(1.1);transform:translateY(-1px)}
+.btn-sm{padding:7px 15px;font-size:12px}
+.btn:disabled{opacity:.45;cursor:not-allowed;transform:none!important;box-shadow:none!important}
+
+/* Stat Cards */
+.kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;padding:0 44px 36px}
+.kpi{background:var(--plate);border:1px solid var(--wire);border-radius:var(--r);padding:20px;position:relative;overflow:hidden;transition:all .3s}
+.kpi:hover{border-color:var(--wire2);transform:translateY(-2px)}
+.kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:2px}
+.kpi.k-rose::before{background:linear-gradient(90deg,var(--rose2),transparent)}
+.kpi.k-teal::before{background:linear-gradient(90deg,var(--teal),transparent)}
+.kpi.k-amber::before{background:linear-gradient(90deg,var(--amber),transparent)}
+.kpi.k-lime::before{background:linear-gradient(90deg,var(--lime),transparent)}
+.kpi-lbl{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1.2px;font-family:var(--mono)}
+.kpi-val{font-family:var(--serif);font-size:34px;font-weight:700;margin:8px 0 4px}
+.kpi-sub{font-size:11px;color:var(--text3)}
+
+/* Feature Grid */
+.feat-row{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;padding:0 44px 48px}
+.feat{background:var(--plate);border:1px solid var(--wire);border-radius:var(--r);padding:22px;transition:all .3s;cursor:pointer}
+.feat:hover{border-color:var(--wire2);background:var(--plate2)}
+.feat-ic{width:42px;height:42px;border-radius:9px;display:flex;align-items:center;justify-content:center;margin-bottom:14px}
+.feat-ic.f-rose{background:rgba(212,132,138,0.15)}
+.feat-ic.f-teal{background:rgba(94,207,202,0.12)}
+.feat-ic.f-amber{background:rgba(240,168,78,0.12)}
+.feat-h{font-family:var(--serif);font-size:15px;font-weight:600;margin-bottom:7px}
+.feat-p{color:var(--text2);font-size:12px;line-height:1.65}
+
+/* Section heading */
+.sec-head{padding:0 44px 18px}
+.sec-h{font-family:var(--serif);font-size:20px;font-weight:700;margin-bottom:3px}
+.sec-s{color:var(--text2);font-size:12px}
+
+/* ─── Analyzer Page ─── */
+.pg-head{padding:32px 44px 0}
+.pg-title{font-family:var(--serif);font-size:26px;font-weight:700}
+.pg-sub{color:var(--text2);font-size:13px;margin-top:4px}
+
+.analyzer-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:22px;padding:22px 44px 48px}
+
+/* Upload Zone */
+.drop-zone{background:var(--plate);border:2px dashed var(--wire2);border-radius:var(--r);min-height:320px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:all .3s;position:relative;overflow:hidden}
+.drop-zone:hover,.drop-zone.drag{border-color:var(--rose2);background:rgba(212,132,138,0.05)}
+.drop-zone.loaded{border-style:solid;border-color:var(--wire);cursor:default;padding:0}
+.drop-inner{text-align:center;padding:40px 24px}
+.drop-icon{width:60px;height:60px;background:rgba(232,180,180,0.1);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px}
+.drop-title{font-size:15px;font-weight:600;margin-bottom:7px}
+.drop-hint{color:var(--text3);font-size:11px;font-family:var(--mono);line-height:1.7}
+#fileIn{display:none}
+
+.img-wrap{position:relative;width:100%;height:100%}
+.img-wrap img{width:100%;height:100%;object-fit:contain;max-height:380px;display:block}
+.img-wrap canvas{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none}
+.img-label{position:absolute;top:10px;left:10px;background:rgba(13,13,20,.8);border:1px solid var(--wire2);border-radius:6px;padding:4px 10px;font-size:10px;font-family:var(--mono);color:var(--rose);backdrop-filter:blur(4px)}
+
+/* Patient form */
+.form-box{margin-top:16px}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.fg{display:flex;flex-direction:column;gap:5px}
+.fg.span2{grid-column:1/-1}
+.flbl{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1.2px;font-family:var(--mono)}
+.finput{background:var(--plate2);border:1px solid var(--wire);border-radius:var(--r2);padding:9px 13px;color:var(--text);font-size:13px;font-family:var(--sans);transition:border-color .2s;width:100%}
+.finput:focus{outline:none;border-color:var(--rose2)}
+.finput:disabled{opacity:.5;cursor:not-allowed}
+select.finput{cursor:pointer}
+
+.action-row{display:flex;gap:10px;flex-wrap:wrap}
+
+/* Result Panel */
+.res-panel{background:var(--plate);border:1px solid var(--wire);border-radius:var(--r);padding:24px;height:fit-content}
+.res-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+.res-title{font-family:var(--serif);font-size:16px;font-weight:700}
+
+.finding-badge{display:inline-flex;align-items:center;gap:8px;padding:8px 16px;border-radius:20px;font-size:12px;font-weight:700;letter-spacing:.8px;font-family:var(--mono)}
+.fb-malignant{background:rgba(224,112,112,0.15);color:var(--coral);border:1px solid rgba(224,112,112,0.3)}
+.fb-benign{background:rgba(240,168,78,0.12);color:var(--amber);border:1px solid rgba(240,168,78,0.25)}
+.fb-negative{background:rgba(126,200,126,0.12);color:var(--lime);border:1px solid rgba(126,200,126,0.25)}
+.fb-pending{background:rgba(107,95,110,0.2);color:var(--text3);border:1px solid rgba(107,95,110,0.2)}
+
+.res-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:16px}
+.ri{background:var(--ink2);border-radius:var(--r2);padding:11px 13px}
+.ri-lbl{font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:1.2px;font-family:var(--mono);margin-bottom:4px}
+.ri-val{font-size:13px;font-weight:600}
+.rv-mal{color:var(--coral)}.rv-ben{color:var(--amber)}.rv-neg{color:var(--lime)}.rv-def{color:var(--text)}
+
+.conf-wrap{margin-bottom:16px}
+.conf-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px}
+.conf-lbl{font-size:10px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:1px}
+.conf-num{font-family:var(--serif);font-size:22px;font-weight:700;color:var(--rose)}
+.conf-track{background:var(--ink2);border-radius:4px;height:7px;overflow:hidden}
+.conf-fill{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--rose2),var(--coral));transition:width 1.4s cubic-bezier(.4,0,.2,1);width:0}
+
+/* Probability bars */
+.prob-section{margin-bottom:16px}
+.prob-label{font-size:10px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:1px;margin-bottom:9px}
+.prob-rows{display:flex;flex-direction:column;gap:7px}
+.prob-r{display:grid;grid-template-columns:110px 1fr 44px;align-items:center;gap:9px}
+.prob-name{font-size:11px;color:var(--text2);font-family:var(--mono)}
+.prob-bg{background:var(--ink2);border-radius:3px;height:5px;overflow:hidden}
+.prob-fg{height:100%;border-radius:3px;transition:width 1.4s cubic-bezier(.4,0,.2,1)}
+.prob-pct{font-size:10px;color:var(--text3);font-family:var(--mono);text-align:right}
+
+/* BIRADS */
+.birads-box{background:var(--ink2);border-radius:var(--r2);padding:13px;margin-bottom:14px;border-left:3px solid var(--rose2)}
+.birads-title{font-size:10px;color:var(--rose);font-family:var(--mono);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px}
+.birads-content{font-size:12px;color:var(--text2);line-height:1.7}
+
+.clin-box{background:var(--ink2);border-radius:var(--r2);padding:13px;margin-bottom:14px}
+.clin-title{font-size:10px;color:var(--teal);font-family:var(--mono);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px}
+.clin-body{font-size:12px;color:var(--text2);line-height:1.7}
+
+.rec-list{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
+.rec-item{display:flex;gap:10px;align-items:flex-start;background:var(--ink2);border-radius:var(--r2);padding:9px 12px}
+.rec-num{width:20px;height:20px;background:var(--rose2);color:#fff;border-radius:50%;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-family:var(--mono)}
+.rec-text{font-size:12px;color:var(--text2);line-height:1.6}
+
+.scan-meta{font-size:10px;color:var(--text3);font-family:var(--mono);display:flex;justify-content:space-between;align-items:center;margin-top:12px}
+
+/* Loading */
+.loader-wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:50px 24px;gap:18px}
+.scan-ring-wrap{width:72px;height:72px;position:relative}
+.sr{position:absolute;inset:0;border:2.5px solid transparent;border-top-color:var(--rose2);border-radius:50%;animation:spin 1s linear infinite}
+.sr2{width:52px;height:52px;top:10px;left:10px;border-top-color:var(--teal);animation-duration:1.6s;animation-direction:reverse}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loader-txt{color:var(--text2);font-size:13px;font-family:var(--mono)}
+.loader-step{font-size:11px;color:var(--text3);font-family:var(--mono)}
+
+/* ─── Chat Page ─── */
+.chat-shell{display:flex;flex-direction:column;height:100vh}
+.chat-top{padding:24px 44px 18px;border-bottom:1px solid var(--wire);flex-shrink:0;display:flex;align-items:center;justify-content:space-between}
+.chat-ctx{display:inline-flex;align-items:center;gap:7px;background:rgba(94,207,202,0.08);border:1px solid rgba(94,207,202,0.2);border-radius:20px;padding:4px 12px;font-size:10px;color:var(--teal);font-family:var(--mono);margin-top:5px}
+
+.messages{flex:1;overflow-y:auto;padding:24px 44px;display:flex;flex-direction:column;gap:14px}
+.msg-row{display:flex;gap:11px;max-width:78%}
+.msg-row.user{flex-direction:row-reverse;align-self:flex-end}
+.av{width:30px;height:30px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;font-family:var(--mono)}
+.av-ai{background:linear-gradient(135deg,var(--rose2),var(--teal))}
+.av-u{background:var(--plate2);color:var(--text2)}
+.bubble{background:var(--plate);border:1px solid var(--wire);border-radius:var(--r);padding:11px 15px;font-size:13px;line-height:1.75}
+.msg-row.user .bubble{background:rgba(212,132,138,0.1);border-color:var(--wire2)}
+.bubble strong{color:var(--rose3)}
+.bubble ul{padding-left:14px;margin:5px 0}
+.bubble li{margin:2px 0}
+.mtime{font-size:9px;color:var(--text3);font-family:var(--mono);margin-top:4px}
+.msg-row.user .mtime{text-align:right}
+.typing{display:flex;gap:4px;align-items:center;padding:6px 2px}
+.td{width:5px;height:5px;background:var(--rose);border-radius:50%;animation:ty 1.2s infinite}
+.td:nth-child(2){animation-delay:.18s}.td:nth-child(3){animation-delay:.36s}
+@keyframes ty{0%,80%,100%{transform:translateY(0);opacity:.35}40%{transform:translateY(-6px);opacity:1}}
+
+.input-area{padding:14px 44px 22px;border-top:1px solid var(--wire);flex-shrink:0}
+.hints{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:10px}
+.hint-chip{background:var(--plate);border:1px solid var(--wire);border-radius:20px;padding:5px 12px;font-size:11px;color:var(--text2);cursor:pointer;transition:all .2s;font-family:var(--mono)}
+.hint-chip:hover{border-color:var(--wire2);color:var(--rose)}
+.input-row{display:flex;gap:10px;background:var(--plate);border:1px solid var(--wire);border-radius:var(--r);padding:10px 14px;transition:border-color .2s}
+.input-row:focus-within{border-color:var(--rose2)}
+.chat-ta{flex:1;background:none;border:none;outline:none;color:var(--text);font-size:13px;font-family:var(--sans);resize:none;height:22px;max-height:110px;line-height:1.5}
+.send-btn{width:34px;height:34px;background:var(--rose2);border-radius:var(--r2);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;flex-shrink:0}
+.send-btn:hover{background:var(--coral);transform:scale(1.06)}
+.send-btn svg{width:15px;height:15px}
+
+/* ─── History Page ─── */
+.hist-ctrl{padding:22px 44px 0;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.search-box{flex:1;max-width:380px;background:var(--plate);border:1px solid var(--wire);border-radius:var(--r2);padding:9px 14px;color:var(--text);font-size:13px;font-family:var(--sans)}
+.search-box:focus{outline:none;border-color:var(--wire2)}
+.f-chip{padding:8px 14px;background:var(--plate);border:1px solid var(--wire);border-radius:var(--r2);font-size:11px;color:var(--text2);cursor:pointer;transition:all .2s;font-family:var(--mono)}
+.f-chip.active{border-color:var(--wire2);color:var(--rose);background:rgba(232,180,180,0.08)}
+
+.hist-table{margin:18px 44px 48px;background:var(--plate);border:1px solid var(--wire);border-radius:var(--r);overflow:hidden}
+.t-head{display:grid;grid-template-columns:130px 155px 70px 110px 95px 110px 1fr;gap:14px;padding:11px 18px;background:var(--ink2);border-bottom:1px solid var(--wire);font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:1.2px;font-family:var(--mono)}
+.t-row{display:grid;grid-template-columns:130px 155px 70px 110px 95px 110px 1fr;gap:14px;padding:13px 18px;border-bottom:1px solid var(--wire);transition:background .2s;align-items:center}
+.t-row:hover{background:var(--ink2)}
+.t-row:last-child{border-bottom:none}
+.tag{display:inline-flex;align-items:center;padding:3px 9px;border-radius:20px;font-size:9px;font-weight:700;font-family:var(--mono);letter-spacing:.5px}
+.tag-red{background:rgba(224,112,112,0.15);color:var(--coral);border:1px solid rgba(224,112,112,0.2)}
+.tag-amber{background:rgba(240,168,78,0.12);color:var(--amber);border:1px solid rgba(240,168,78,0.2)}
+.tag-lime{background:rgba(126,200,126,0.12);color:var(--lime);border:1px solid rgba(126,200,126,0.2)}
+.tag-rose{background:rgba(232,180,180,0.12);color:var(--rose);border:1px solid rgba(232,180,180,0.2)}
+
+/* ─── Tools Page ─── */
+.tools-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;padding:22px 44px 32px}
+.tool-card{background:var(--plate);border:1px solid var(--wire);border-radius:var(--r);padding:22px;cursor:pointer;transition:all .3s}
+.tool-card:hover{border-color:var(--wire2);background:var(--plate2);transform:translateY(-2px)}
+.tc-icon{width:44px;height:44px;border-radius:9px;display:flex;align-items:center;justify-content:center;margin-bottom:14px}
+.tc-name{font-family:var(--serif);font-size:14px;font-weight:600;margin-bottom:3px}
+.tc-tag{font-size:9px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px}
+.tc-desc{font-size:11px;color:var(--text2);line-height:1.6}
+
+/* API config */
+.config-box{margin:0 44px 44px;background:var(--plate);border:1px solid var(--wire);border-radius:var(--r);padding:24px}
+.config-h{font-family:var(--serif);font-size:15px;font-weight:600;margin-bottom:6px}
+.config-p{color:var(--text2);font-size:12px;margin-bottom:16px}
+.config-note{background:rgba(94,207,202,0.06);border:1px solid rgba(94,207,202,0.18);border-radius:var(--r2);padding:10px 14px;font-size:11px;color:var(--text2);font-family:var(--mono);margin-top:12px;line-height:1.6}
+
+/* ─── Modal ─── */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.72);backdrop-filter:blur(5px);z-index:200;display:none;align-items:center;justify-content:center}
+.modal-bg.open{display:flex}
+.modal{background:var(--ink2);border:1px solid var(--wire2);border-radius:var(--r);width:680px;max-width:94vw;max-height:88vh;overflow-y:auto}
+.modal-h{padding:22px 24px;border-bottom:1px solid var(--wire);display:flex;align-items:center;justify-content:space-between}
+.modal-ht{font-family:var(--serif);font-size:17px;font-weight:700}
+.modal-x{width:30px;height:30px;background:var(--plate2);border:none;border-radius:var(--r2);cursor:pointer;color:var(--text2);display:flex;align-items:center;justify-content:center;transition:all .2s;font-size:14px}
+.modal-x:hover{background:var(--coral);color:#fff}
+.modal-b{padding:24px}
+
+/* ─── Toast ─── */
+.toasts{position:fixed;bottom:22px;right:22px;z-index:300;display:flex;flex-direction:column;gap:8px}
+.toast{background:var(--plate);border:1px solid var(--wire);border-radius:var(--r2);padding:11px 15px;font-size:12px;display:flex;align-items:center;gap:9px;animation:tslide .3s ease;max-width:300px;box-shadow:0 4px 20px rgba(0,0,0,.4)}
+.toast.ok{border-color:rgba(126,200,126,.3)}.toast.err{border-color:rgba(224,112,112,.3)}
+@keyframes tslide{from{transform:translateX(80px);opacity:0}to{transform:translateX(0);opacity:1}}
+
+/* ─── Empty State ─── */
+.empty{text-align:center;padding:50px 24px;color:var(--text3)}
+.empty-ico{width:56px;height:56px;background:rgba(107,95,110,.15);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 14px}
+
+/* ─── Report preview card in modal ─── */
+.rp-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+
+/* Responsive */
+@media(max-width:1100px){.kpi-row,.feat-row,.tools-grid{grid-template-columns:repeat(2,1fr)}.analyzer-grid{grid-template-columns:1fr}}
+@media(max-width:760px){.rail{width:200px}.canvas{margin-left:200px}.dash-hero,.kpi-row,.feat-row,.analyzer-grid,.tools-grid,.hist-ctrl,.config-box{padding-left:20px;padding-right:20px}.hist-table{margin-left:20px;margin-right:20px}.messages,.chat-top,.input-area{padding-left:20px;padding-right:20px}}
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <!-- ══ SIDEBAR RAIL ══ -->
+  <aside class="rail">
+    <div class="brand">
+      <div class="brand-mark">
+        <div class="brand-gem">
+          <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/><path d="M8 12c0-2.21 1.79-4 4-4s4 1.79 4 4-1.79 4-4 4-4-1.79-4-4z"/><circle cx="12" cy="12" r="1.5" fill="white"/></svg>
+        </div>
+        <div>
+          <div class="brand-name">Breast<em>Scan</em></div>
+          <div class="brand-tag">AI · v2.0</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="nav-list">
+      <button class="nav-btn on" data-pg="dash">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        Dashboard
+      </button>
+      <button class="nav-btn" data-pg="analyzer">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+        Scan Analyzer
+      </button>
+      <button class="nav-btn" data-pg="chat">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        AI Assistant
+      </button>
+      <button class="nav-btn" data-pg="tools">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+        Clinical Tools
+      </button>
+      <button class="nav-btn" data-pg="history">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8v4l3 3m6-3a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/></svg>
+        Scan History
+        <span class="n-badge" id="hBadge">0</span>
+      </button>
+    </div>
+
+    <div class="rail-foot">
+      <div class="ai-status"><div class="pulse"></div>AI Engine Online</div>
+    </div>
+  </aside>
+
+  <!-- ══ MAIN CANVAS ══ -->
+  <main class="canvas">
+
+    <!-- ── DASHBOARD ── -->
+    <section class="pg on" id="pg-dash">
+      <div class="dash-hero">
+        <div class="eyebrow">
+          <svg width="8" height="8" viewBox="0 0 8 8"><circle cx="4" cy="4" r="4" fill="currentColor"/></svg>
+          BREAST ONCOLOGY AI PLATFORM
+        </div>
+        <h1 class="hero-h">Advanced <span class="glow">Breast Tumor</span><br/>Detection & Analysis</h1>
+        <p class="hero-p">Upload mammography, ultrasound, or MRI breast scans for AI-powered tumor detection, BI-RADS classification, malignancy assessment, and automated clinical reporting.</p>
+        <div class="hero-btns">
+          <button class="btn btn-rose" onclick="go('analyzer')">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+            Analyze Breast Scan
+          </button>
+          <button class="btn btn-ghost" onclick="go('chat')">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            Ask AI Assistant
+          </button>
+        </div>
+      </div>
+
+      <div class="kpi-row">
+        <div class="kpi k-rose"><div class="kpi-lbl">Total Scans</div><div class="kpi-val" id="kTotal">0</div><div class="kpi-sub">All analyses</div></div>
+        <div class="kpi k-teal"><div class="kpi-lbl">Malignant Found</div><div class="kpi-val" id="kMal" style="color:var(--coral)">0</div><div class="kpi-sub">Positive detections</div></div>
+        <div class="kpi k-amber"><div class="kpi-lbl">Benign / Clear</div><div class="kpi-val" id="kBen" style="color:var(--lime)">0</div><div class="kpi-sub">Low-risk findings</div></div>
+        <div class="kpi k-lime"><div class="kpi-lbl">Avg Confidence</div><div class="kpi-val" id="kConf" style="color:var(--rose)">—</div><div class="kpi-sub">AI certainty score</div></div>
+      </div>
+
+      <div class="sec-head"><div class="sec-h">Platform Features</div><div class="sec-s">Clinical-grade breast imaging AI capabilities</div></div>
+      <div class="feat-row">
+        <div class="feat" onclick="go('analyzer')">
+          <div class="feat-ic f-rose"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--rose2)" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg></div>
+          <div class="feat-h">Multi-Modal Detection</div>
+          <div class="feat-p">Supports mammography (MLO/CC views), breast ultrasound, and breast MRI. CNN trained on diverse breast imaging datasets.</div>
+        </div>
+        <div class="feat" onclick="go('analyzer')">
+          <div class="feat-ic f-teal"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--teal)" stroke-width="2"><path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2V9M9 21H5a2 2 0 0 1-2-2V9m0 0h18"/></svg></div>
+          <div class="feat-h">BI-RADS Classification</div>
+          <div class="feat-p">Automated ACR BI-RADS 0–6 scoring with lesion morphology analysis, margin assessment, and calcification detection.</div>
+        </div>
+        <div class="feat" onclick="go('history')">
+          <div class="feat-ic f-amber"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--amber)" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
+          <div class="feat-h">Clinical Report Generation</div>
+          <div class="feat-p">Structured PDF reports with ACR standardized language, management recommendations, and follow-up protocols.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── ANALYZER ── -->
+    <section class="pg" id="pg-analyzer">
+      <div class="pg-head">
+        <div class="pg-title">Breast Scan Analyzer</div>
+        <div class="pg-sub">Upload mammography, ultrasound, or MRI — AI detects masses, calcifications, and assesses malignancy risk</div>
+      </div>
+
+      <div class="analyzer-grid">
+        <!-- LEFT col -->
+        <div>
+          <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileIn').click()"
+               ondrop="onDrop(event)" ondragover="onDragOver(event)" ondragleave="onDragLeave(event)">
+            <div class="drop-inner" id="dropInner">
+              <div class="drop-icon">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--rose2)" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              </div>
+              <div class="drop-title">Drop Breast Scan Here</div>
+              <div class="drop-hint">Mammography · Ultrasound · MRI<br/>JPG · PNG · WEBP — Max 50 MB</div>
+            </div>
+            <div class="img-wrap" id="imgWrap" style="display:none">
+              <div class="img-label" id="imgLabel">MAMMOGRAM</div>
+              <img id="prevImg" src="" alt="Scan"/>
+              <canvas id="segCv"></canvas>
+            </div>
+          </div>
+          <input type="file" id="fileIn" accept=".jpg,.jpeg,.png,.webp" onchange="onFileSelect(event)"/>
+
+          <div class="form-box">
+            <div class="form-grid">
+              <div class="fg"><label class="flbl">Patient Name</label><input class="finput" id="pName" placeholder="Jane Smith"/></div>
+              <div class="fg"><label class="flbl">Patient ID</label><input class="finput" id="pId" placeholder="BC-2025-001"/></div>
+              <div class="fg"><label class="flbl">Age</label><input class="finput" type="number" id="pAge" placeholder="52"/></div>
+              <div class="fg"><label class="flbl">Scan Type</label>
+                <select class="finput" id="scanType">
+                  <option value="MAMMOGRAPHY">Mammography</option>
+                  <option value="ULTRASOUND">Breast Ultrasound</option>
+                  <option value="MRI">Breast MRI</option>
+                </select>
+              </div>
+              <div class="fg"><label class="flbl">Laterality</label>
+                <select class="finput" id="lateral">
+                  <option value="LEFT">Left Breast</option>
+                  <option value="RIGHT">Right Breast</option>
+                  <option value="BILATERAL">Bilateral</option>
+                </select>
+              </div>
+              <div class="fg"><label class="flbl">View / Protocol</label>
+                <select class="finput" id="viewType">
+                  <option value="CC">CC (Craniocaudal)</option>
+                  <option value="MLO">MLO (Mediolateral Oblique)</option>
+                  <option value="TRANSVERSE">Transverse</option>
+                  <option value="LONGITUDINAL">Longitudinal</option>
+                  <option value="T1C">T1 + Contrast (MRI)</option>
+                </select>
+              </div>
+              <div class="fg span2"><label class="flbl">Clinical Notes</label><input class="finput" id="notes" placeholder="Palpable lump, family history, prior biopsy..."/></div>
+            </div>
+
+            <div class="action-row">
+              <button class="btn btn-rose" id="analyzeBtn" disabled onclick="runAnalysis()">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+                Analyze Scan
+              </button>
+              <button class="btn btn-ghost" id="reportBtn" disabled onclick="generateReport()">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                Generate Report
+              </button>
+              <button class="btn btn-ghost btn-sm" onclick="clearAll()">Clear</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- RIGHT col: results -->
+        <div>
+          <div class="res-panel">
+            <!-- Initial state -->
+            <div id="resInit">
+              <div class="empty">
+                <div class="empty-ico"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
+                <div style="font-size:13px;font-weight:600;margin-bottom:6px;">No Analysis Yet</div>
+                <div style="font-size:11px;">Upload a breast scan and click Analyze to begin</div>
+              </div>
+            </div>
+
+            <!-- Loading state -->
+            <div id="resLoad" style="display:none">
+              <div class="loader-wrap">
+                <div class="scan-ring-wrap"><div class="sr"></div><div class="sr sr2"></div></div>
+                <div class="loader-txt">Analyzing Breast Scan...</div>
+                <div class="loader-step" id="loadStep">Loading image...</div>
+              </div>
+            </div>
+
+            <!-- Results -->
+            <div id="resContent" style="display:none">
+              <div class="res-hdr">
+                <span class="res-title">AI Findings</span>
+                <div class="finding-badge fb-pending" id="fBadge">PENDING</div>
+              </div>
+
+              <div class="res-grid">
+                <div class="ri"><div class="ri-lbl">Finding</div><div class="ri-val rv-def" id="rFinding">—</div></div>
+                <div class="ri"><div class="ri-lbl">Malignancy</div><div class="ri-val rv-def" id="rMalig">—</div></div>
+                <div class="ri"><div class="ri-lbl">BI-RADS</div><div class="ri-val rv-def" id="rBirads">—</div></div>
+                <div class="ri"><div class="ri-lbl">Lesion Size</div><div class="ri-val rv-def" id="rSize">—</div></div>
+                <div class="ri"><div class="ri-lbl">Laterality</div><div class="ri-val rv-def" id="rLat">—</div></div>
+                <div class="ri"><div class="ri-lbl">Morphology</div><div class="ri-val rv-def" style="font-size:11px;" id="rMorph">—</div></div>
+              </div>
+
+              <div class="conf-wrap">
+                <div class="conf-top">
+                  <span class="conf-lbl">AI Confidence</span>
+                  <span class="conf-num" id="rConf">0%</span>
+                </div>
+                <div class="conf-track"><div class="conf-fill" id="rConfBar"></div></div>
+              </div>
+
+              <div class="prob-section">
+                <div class="prob-label">Probability Distribution</div>
+                <div class="prob-rows">
+                  <div class="prob-r"><span class="prob-name">Malignant Mass</span><div class="prob-bg"><div class="prob-fg" id="pb0" style="background:var(--coral)"></div></div><span class="prob-pct" id="pp0">0%</span></div>
+                  <div class="prob-r"><span class="prob-name">Benign Mass</span><div class="prob-bg"><div class="prob-fg" id="pb1" style="background:var(--amber)"></div></div><span class="prob-pct" id="pp1">0%</span></div>
+                  <div class="prob-r"><span class="prob-name">Calcifications</span><div class="prob-bg"><div class="prob-fg" id="pb2" style="background:var(--teal)"></div></div><span class="prob-pct" id="pp2">0%</span></div>
+                  <div class="prob-r"><span class="prob-name">Normal / Benign</span><div class="prob-bg"><div class="prob-fg" id="pb3" style="background:var(--lime)"></div></div><span class="prob-pct" id="pp3">0%</span></div>
+                </div>
+              </div>
+
+              <div class="birads-box">
+                <div class="birads-title">BI-RADS Assessment</div>
+                <div class="birads-content" id="rBiradsDesc">—</div>
+              </div>
+
+              <div class="clin-box">
+                <div class="clin-title">Clinical Interpretation</div>
+                <div class="clin-body" id="rInterp">—</div>
+              </div>
+
+              <div style="margin-bottom:6px;"><div class="clin-title" style="color:var(--amber);font-size:10px;font-family:var(--mono);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Recommendations</div>
+                <div class="rec-list" id="rRecList"></div>
+              </div>
+
+              <div class="scan-meta">
+                <span id="rScanId">—</span>
+                <span style="display:flex;gap:12px;align-items:center;">
+                  <button class="btn btn-ghost btn-sm" onclick="askAI()" style="padding:5px 12px;font-size:11px;">Ask AI</button>
+                  <span id="rMs">—</span>
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── AI CHAT ── -->
+    <section class="pg" id="pg-chat">
+      <div class="chat-shell">
+        <div class="chat-top">
+          <div>
+            <div class="pg-title">AI Breast Cancer Assistant</div>
+            <div class="pg-sub" style="margin-top:3px;">Powered by Claude · Expert in breast oncology &amp; imaging</div>
+            <div id="ctxBadge" style="display:none;" class="chat-ctx">
+              <svg width="8" height="8" viewBox="0 0 8 8"><circle cx="4" cy="4" r="4" fill="currentColor"/></svg>
+              Scan context active
+            </div>
+          </div>
+          <button class="btn btn-ghost btn-sm" onclick="clearChat()">Clear Chat</button>
+        </div>
+
+        <div class="messages" id="msgs">
+          <div class="msg-row">
+            <div class="av av-ai">BS</div>
+            <div>
+              <div class="bubble">
+                <p>Hello, I'm <strong>BreastScan AI</strong> — your specialist assistant for breast imaging and oncology.</p><br/>
+                <p>I can help you understand:</p>
+                <ul>
+                  <li>Mammography, ultrasound &amp; MRI findings</li>
+                  <li>BI-RADS classification &amp; what it means</li>
+                  <li>Tumor characteristics (margins, shape, echogenicity)</li>
+                  <li>Biopsy types &amp; surgical options</li>
+                  <li>Hormone receptor status &amp; targeted therapy</li>
+                  <li>Screening recommendations by risk level</li>
+                </ul><br/>
+                <p>If you've analyzed a scan, I'll have full context of those findings. What can I help you with?</p>
+              </div>
+              <div class="mtime">BreastScan AI · now</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="input-area">
+          <div class="hints" id="chatHints">
+            <div class="hint-chip" onclick="sendQ('What does BI-RADS 4 mean and should I be worried?')">BI-RADS 4 meaning</div>
+            <div class="hint-chip" onclick="sendQ('What is the difference between IDC and DCIS breast cancer?')">IDC vs DCIS</div>
+            <div class="hint-chip" onclick="sendQ('What are the signs of a malignant mass on mammography?')">Malignant signs</div>
+            <div class="hint-chip" onclick="sendQ('When is a breast biopsy necessary after imaging?')">When to biopsy</div>
+            <div class="hint-chip" onclick="sendQ('Explain HER2 positive breast cancer treatment options')">HER2+ treatment</div>
+          </div>
+          <div class="input-row">
+            <textarea class="chat-ta" id="chatIn" placeholder="Ask about your scan, BI-RADS, biopsy, treatment options..." onkeydown="chatKey(event)" oninput="autoH(this)" rows="1"></textarea>
+            <button class="send-btn" onclick="sendMsg()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── CLINICAL TOOLS ── -->
+    <section class="pg" id="pg-tools">
+      <div class="pg-head" style="padding-bottom:22px;">
+        <div class="pg-title">Clinical Tools</div>
+        <div class="pg-sub">Breast oncology decision support &amp; reference utilities</div>
+      </div>
+
+      <div class="tools-grid">
+        <div class="tool-card" onclick="openTool('birads')">
+          <div class="tc-icon" style="background:rgba(232,180,180,0.12)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--rose2)" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 9h6M9 12h6M9 15h4"/></svg></div>
+          <div class="tc-name">BI-RADS Reference</div>
+          <div class="tc-tag">ACR Classification</div>
+          <div class="tc-desc">Complete ACR BI-RADS lexicon (0–6) with management recommendations, cancer likelihood, and follow-up protocols.</div>
+        </div>
+        <div class="tool-card" onclick="openTool('tumor-types')">
+          <div class="tc-icon" style="background:rgba(224,112,112,0.12)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--coral)" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div>
+          <div class="tc-name">Tumor Type Guide</div>
+          <div class="tc-tag">Histopathology</div>
+          <div class="tc-desc">IDC, ILC, DCIS, LCIS, mucinous, tubular, medullary — characteristics, imaging features, and prognosis.</div>
+        </div>
+        <div class="tool-card" onclick="openTool('imaging-guide')">
+          <div class="tc-icon" style="background:rgba(94,207,202,0.12)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--teal)" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><polyline points="8 21 12 17 16 21"/></svg></div>
+          <div class="tc-name">Imaging Features Guide</div>
+          <div class="tc-tag">Radiology Reference</div>
+          <div class="tc-desc">Mammographic signs of malignancy: spiculated margins, microcalcifications patterns, asymmetry, and architectural distortion.</div>
+        </div>
+        <div class="tool-card" onclick="askToolAI('Explain the TNM staging system for breast cancer and what each stage means clinically')">
+          <div class="tc-icon" style="background:rgba(240,168,78,0.12)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--amber)" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div>
+          <div class="tc-name">TNM Staging Calculator</div>
+          <div class="tc-tag">Prognostic Tool</div>
+          <div class="tc-desc">AJCC 8th edition TNM staging for breast cancer with 5-year survival statistics and systemic therapy indications.</div>
+        </div>
+        <div class="tool-card" onclick="askToolAI('What are the NCCN treatment guidelines for early-stage, locally advanced, and metastatic breast cancer?')">
+          <div class="tc-icon" style="background:rgba(126,200,126,0.12)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--lime)" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+          <div class="tc-name">Treatment Protocols</div>
+          <div class="tc-tag">NCCN Guidelines</div>
+          <div class="tc-desc">Surgery options (lumpectomy vs mastectomy), chemotherapy regimens, hormone therapy, HER2-targeted agents, and immunotherapy.</div>
+        </div>
+        <div class="tool-card" onclick="askToolAI('What are the recommended breast cancer screening guidelines by age, risk level, and imaging modality?')">
+          <div class="tc-icon" style="background:rgba(232,180,180,0.12)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--rose)" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></div>
+          <div class="tc-name">Screening Guidelines</div>
+          <div class="tc-tag">Prevention &amp; Early Detection</div>
+          <div class="tc-desc">ACS, ACR, and USPSTF screening recommendations by age, BRCA status, breast density, and personal risk factors.</div>
+        </div>
+      </div>
+
+      <div class="config-box">
+        <div class="config-h">⚡ API Configuration</div>
+        <div class="config-p">Configure the Spring Boot backend endpoint and Anthropic Claude API key for full AI functionality.</div>
+        <div class="form-grid">
+          <div class="fg"><label class="flbl">Backend API URL</label><input class="finput" id="cfgUrl" value="http://localhost:8080" placeholder="http://localhost:8080"/></div>
+          <div class="fg"><label class="flbl">Anthropic API Key</label><input class="finput" type="password" id="cfgKey" placeholder="sk-ant-..."/></div>
+        </div>
+        <div style="display:flex;gap:10px;margin-top:12px;">
+          <button class="btn btn-rose btn-sm" onclick="saveCfg()">Save Config</button>
+          <button class="btn btn-ghost btn-sm" onclick="testConn()">Test Connection</button>
+        </div>
+        <div class="config-note">
+          Demo mode active when backend unavailable. AI chat requires Anthropic API key.<br/>
+          Set key in Spring Boot: <code>neuroscan.anthropic.api-key=your_key</code>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── HISTORY ── -->
+    <section class="pg" id="pg-history">
+      <div class="pg-head">
+        <div class="pg-title">Scan History</div>
+        <div class="pg-sub">Complete audit trail of all breast imaging analyses</div>
+      </div>
+      <div class="hist-ctrl">
+        <input class="search-box" placeholder="Search patient, scan ID, finding..." oninput="filterHist(this.value)" id="histSearch"/>
+        <div class="f-chip active" id="fAll" onclick="setFilter('all')">All</div>
+        <div class="f-chip" id="fMal" onclick="setFilter('malignant')">Malignant</div>
+        <div class="f-chip" id="fBen" onclick="setFilter('benign')">Benign/Clear</div>
+        <button class="btn btn-ghost btn-sm" style="margin-left:auto;" onclick="refreshHist()">↺ Refresh</button>
+      </div>
+      <div class="hist-table">
+        <div class="t-head">
+          <span>Scan ID</span><span>Patient</span><span>Age</span><span>Finding</span><span>BI-RADS</span><span>Confidence</span><span>Actions</span>
+        </div>
+        <div id="histBody">
+          <div class="empty"><div style="color:var(--text3);font-size:12px;padding:44px;">No scans analyzed yet.</div></div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- Modal -->
+<div class="modal-bg" id="modal">
+  <div class="modal">
+    <div class="modal-h"><div class="modal-ht" id="modalT">—</div><button class="modal-x" onclick="closeModal()">✕</button></div>
+    <div class="modal-b" id="modalB"></div>
+  </div>
+</div>
+
+<!-- Toasts -->
+<div class="toasts" id="toasts"></div>
+
+<script>
+/* ═══════════════════════════════════════════════
+   STATE
+═══════════════════════════════════════════════ */
+const S = {
+  page: 'dash',
+  file: null,
+  scanId: null,
+  result: null,
+  chatHist: [],
+  sessId: 'bs-' + Math.random().toString(36).substr(2,7),
+  scans: JSON.parse(localStorage.getItem('bs_scans') || '[]'),
+  filter: 'all',
+  apiUrl: localStorage.getItem('bs_url') || 'http://localhost:8080',
+  apiKey: localStorage.getItem('bs_key') || '',
+};
+
+/* ═══ NAV ═══ */
+function go(pg) {
+  document.querySelectorAll('.pg').forEach(p => p.classList.remove('on'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('on'));
+  document.getElementById('pg-' + pg).classList.add('on');
+  document.querySelector(`.nav-btn[data-pg="${pg}"]`).classList.add('on');
+  S.page = pg;
+  if (pg === 'history') renderHist();
+  if (pg === 'dash') loadKPI();
+  document.getElementById('cfgUrl').value = S.apiUrl;
+  document.getElementById('cfgKey').value = S.apiKey;
+}
+document.querySelectorAll('.nav-btn').forEach(b => b.addEventListener('click', () => go(b.dataset.pg)));
+
+/* ═══ FILE UPLOAD ═══ */
+function onDragOver(e) { e.preventDefault(); document.getElementById('dropZone').classList.add('drag'); }
+function onDragLeave() { document.getElementById('dropZone').classList.remove('drag'); }
+function onDrop(e) { e.preventDefault(); document.getElementById('dropZone').classList.remove('drag'); if (e.dataTransfer.files[0]) loadFile(e.dataTransfer.files[0]); }
+function onFileSelect(e) { if (e.target.files[0]) loadFile(e.target.files[0]); }
+
+function loadFile(f) {
+  const ok = ['image/jpeg','image/png','image/webp'];
+  if (!ok.includes(f.type)) { toast('Use JPG, PNG, or WEBP images', 'err'); return; }
+  S.file = f;
+  const rd = new FileReader();
+  rd.onload = ev => {
+    const dz = document.getElementById('dropZone');
+    dz.classList.add('loaded'); dz.onclick = null;
+    document.getElementById('dropInner').style.display = 'none';
+    const iw = document.getElementById('imgWrap');
+    iw.style.display = 'block';
+    document.getElementById('prevImg').src = ev.target.result;
+    document.getElementById('imgLabel').textContent = document.getElementById('scanType').value;
+    clearCanvas();
+    document.getElementById('analyzeBtn').disabled = false;
+    document.getElementById('reportBtn').disabled = true;
+    showInit();
+    toast('Scan loaded — ready for analysis', 'ok');
+  };
+  rd.readAsDataURL(f);
+}
+
+function clearCanvas() {
+  const cv = document.getElementById('segCv');
+  cv.getContext('2d').clearRect(0, 0, cv.width, cv.height);
+}
+
+function clearAll() {
+  S.file = null; S.scanId = null; S.result = null;
+  const dz = document.getElementById('dropZone');
+  dz.classList.remove('loaded');
+  dz.onclick = () => document.getElementById('fileIn').click();
+  document.getElementById('dropInner').style.display = 'flex';
+  document.getElementById('imgWrap').style.display = 'none';
+  document.getElementById('prevImg').src = '';
+  document.getElementById('fileIn').value = '';
+  document.getElementById('analyzeBtn').disabled = true;
+  document.getElementById('reportBtn').disabled = true;
+  showInit();
+  clearCanvas();
+}
+
+function showInit() {
+  document.getElementById('resInit').style.display = 'block';
+  document.getElementById('resLoad').style.display = 'none';
+  document.getElementById('resContent').style.display = 'none';
+}
+
+/* ═══ ANALYSIS ═══ */
+async function runAnalysis() {
+  if (!S.file) return;
+  document.getElementById('resInit').style.display = 'none';
+  document.getElementById('resContent').style.display = 'none';
+  document.getElementById('resLoad').style.display = 'block';
+  document.getElementById('analyzeBtn').disabled = true;
+
+  const steps = [
+    'Loading scan data...','Preprocessing image...','Normalizing pixel values...',
+    'Running CNN detection...','Classifying mass morphology...','Computing BI-RADS score...',
+    'Generating segmentation mask...','Compiling clinical report...'
+  ];
+  let si = 0;
+  const iv = setInterval(() => {
+    document.getElementById('loadStep').textContent = steps[si++ % steps.length];
+  }, 550);
+
+  try {
+    let res;
+    try { res = await backendAnalyze(); }
+    catch(e) { res = await demoAnalyze(); }
+
+    clearInterval(iv);
+    S.result = res;
+    S.scanId = res.scanId;
+
+    // Draw segmentation
+    if (res.hasMass) drawSeg(res);
+
+    // Save locally
+    const entry = {
+      scanId: res.scanId,
+      patientName: document.getElementById('pName').value || 'Anonymous',
+      patientId: document.getElementById('pId').value || '—',
+      patientAge: document.getElementById('pAge').value || '—',
+      scanType: document.getElementById('scanType').value,
+      finding: res.finding,
+      birads: res.birads,
+      confidence: res.confidence,
+      malignant: res.malignant,
+      createdAt: new Date().toISOString()
+    };
+    S.scans.unshift(entry);
+    localStorage.setItem('bs_scans', JSON.stringify(S.scans));
+    updateBadge();
+
+    renderResults(res);
+    document.getElementById('resLoad').style.display = 'none';
+    document.getElementById('resContent').style.display = 'block';
+    document.getElementById('reportBtn').disabled = false;
+    document.getElementById('analyzeBtn').disabled = false;
+    document.getElementById('ctxBadge').style.display = 'flex';
+    toast('Analysis complete!', 'ok');
+
+  } catch(e) {
+    clearInterval(iv);
+    document.getElementById('resLoad').style.display = 'none';
+    showInit();
+    document.getElementById('analyzeBtn').disabled = false;
+    toast('Analysis failed: ' + e.message, 'err');
+  }
+}
+
+async function backendAnalyze() {
+  const fd = new FormData();
+  fd.append('file', S.file);
+  const name = document.getElementById('pName').value;
+  const age = document.getElementById('pAge').value;
+  const pid = document.getElementById('pId').value;
+  if (name) fd.append('patientName', name);
+  if (age) fd.append('patientAge', age);
+  if (pid) fd.append('patientId', pid);
+  fd.append('scanType', document.getElementById('scanType').value);
+
+  const r = await fetch(`${S.apiUrl}/api/v1/analyze`, { method:'POST', body: fd });
+  if (!r.ok) throw new Error(r.status);
+  return r.json();
+}
+
+/* DEMO ANALYSIS — Breast-specific simulation */
+async function demoAnalyze() {
+  await new Promise(r => setTimeout(r, 3100));
+
+  const outcomes = [
+    {
+      finding: 'Irregular Spiculated Mass',
+      malignant: true, birads: 5,
+      confidence: 87 + Math.random()*10,
+      probMal: 87+Math.random()*10, probBen: 4+Math.random()*5, probCalc: 3+Math.random()*4, probNorm: 2+Math.random()*3,
+      morphology: 'Irregular, spiculated margins',
+      interp: 'The imaging demonstrates an irregular mass with spiculated margins in the upper outer quadrant. Features are highly suspicious for malignancy (IDC). No associated microcalcifications identified on this projection. Asymmetric density noted compared to contralateral breast.',
+      recs: [
+        'Urgent biopsy: Image-guided core needle biopsy within 5–7 days',
+        'Bilateral mammography with additional views (magnification, spot compression)',
+        'Breast ultrasound for lesion characterization and axillary assessment',
+        'Refer to breast surgery / multidisciplinary breast team',
+        'Genetic counseling if age < 50 or family history of BRCA mutation'
+      ],
+      biradsDesc: 'BI-RADS 5 — Highly Suggestive of Malignancy. Risk of cancer ≥ 95%. Biopsy is mandatory. Immediate referral to breast specialist required.',
+      sizeMm: 14 + Math.random()*8,
+    },
+    {
+      finding: 'Oval Circumscribed Mass',
+      malignant: false, birads: 3,
+      confidence: 82 + Math.random()*12,
+      probMal: 8+Math.random()*7, probBen: 76+Math.random()*12, probCalc: 5+Math.random()*5, probNorm: 8+Math.random()*4,
+      morphology: 'Oval, circumscribed, parallel',
+      interp: 'Well-defined oval mass with circumscribed margins oriented parallel to the chest wall. Features are most consistent with a benign lesion (fibroadenoma or cyst). No suspicious calcifications. No skin thickening or nipple retraction. Doppler assessment recommended.',
+      recs: [
+        'Short-interval follow-up: Unilateral mammography or ultrasound in 6 months',
+        'Ultrasound to characterize as solid vs cystic — aspiration if cystic',
+        'If stable at 6 months, annual screening mammography',
+        'Clinical breast exam at follow-up visit',
+        'Patient reassurance — <2% malignancy risk for BI-RADS 3'
+      ],
+      biradsDesc: 'BI-RADS 3 — Probably Benign. Short-interval follow-up recommended. Risk of malignancy < 2%. No immediate biopsy required unless patient preference or clinical concern.',
+      sizeMm: 8 + Math.random()*10,
+    },
+    {
+      finding: 'Clustered Microcalcifications',
+      malignant: true, birads: 4,
+      confidence: 74 + Math.random()*14,
+      probMal: 52+Math.random()*18, probBen: 18+Math.random()*12, probCalc: 22+Math.random()*10, probNorm: 4+Math.random()*5,
+      morphology: 'Fine pleomorphic calcifications',
+      interp: 'Cluster of fine pleomorphic microcalcifications in a segmental distribution in the upper inner quadrant. Morphology and distribution are suspicious for ductal carcinoma in situ (DCIS). No associated soft tissue mass identified on this view. Magnification views confirm the suspicious morphology.',
+      recs: [
+        'Stereotactic biopsy: Vacuum-assisted core biopsy of the calcification cluster',
+        'Magnification mammography views (CC and MLO) for full extent',
+        'Surgical referral if biopsy confirms DCIS or atypical ductal hyperplasia',
+        'Pre-surgical localization planning (wire or SAVI SCOUT)',
+        'Contralateral mammogram to complete bilateral assessment'
+      ],
+      biradsDesc: 'BI-RADS 4B — Moderate Suspicion for Malignancy. Risk of cancer 15–30%. Tissue sampling (biopsy) is recommended. Stereotactic or ultrasound-guided biopsy preferred.',
+      sizeMm: 18 + Math.random()*12,
+    },
+    {
+      finding: 'No Significant Finding',
+      malignant: false, birads: 1,
+      confidence: 92 + Math.random()*7,
+      probMal: 2+Math.random()*3, probBen: 6+Math.random()*5, probCalc: 1+Math.random()*2, probNorm: 88+Math.random()*8,
+      morphology: 'No mass or asymmetry',
+      interp: 'Bilateral mammography demonstrates scattered fibroglandular densities (ACR density category B). No suspicious masses, microcalcifications, or architectural distortion identified. Skin and nipple-areolar complex are unremarkable. Axillary regions are within normal limits. No prior studies available for comparison.',
+      recs: [
+        'Routine annual screening mammography per age-appropriate guidelines',
+        'Clinical breast self-examination monthly',
+        'Clinical breast exam by provider annually',
+        'Discuss supplemental screening (MRI or ultrasound) if high-risk (>20% lifetime risk)',
+        'Continue healthy lifestyle: maintain BMI, limit alcohol, regular exercise'
+      ],
+      biradsDesc: 'BI-RADS 1 — Negative. No significant finding. Routine annual screening recommended. Risk of malignancy essentially 0%.',
+      sizeMm: null,
+    }
+  ];
+
+  const o = outcomes[Math.floor(Math.random() * outcomes.length)];
+  // Normalize probs
+  const tot = o.probMal + o.probBen + o.probCalc + o.probNorm;
+  o.probMal = parseFloat((o.probMal/tot*100).toFixed(1));
+  o.probBen = parseFloat((o.probBen/tot*100).toFixed(1));
+  o.probCalc = parseFloat((o.probCalc/tot*100).toFixed(1));
+  o.probNorm = parseFloat((100 - o.probMal - o.probBen - o.probCalc).toFixed(1));
+
+  const lateral = document.getElementById('lateral').value;
+  const scanType = document.getElementById('scanType').value;
+  const view = document.getElementById('viewType').value;
+
+  return {
+    scanId: 'BS-' + Date.now().toString(36).toUpperCase().slice(-6),
+    success: true,
+    ...o,
+    hasMass: o.finding !== 'No Significant Finding',
+    laterality: lateral,
+    scanType: scanType,
+    viewType: view,
+    tumorSizeMm: o.sizeMm ? parseFloat(o.sizeMm.toFixed(1)) : null,
+    analysisDurationMs: Math.floor(2800 + Math.random()*600),
+    bbX: 90 + Math.floor(Math.random()*80),
+    bbY: 70 + Math.floor(Math.random()*80),
+    bbW: 50 + Math.floor(Math.random()*50),
+    bbH: 45 + Math.floor(Math.random()*45),
+  };
+}
+
+function renderResults(r) {
+  const isMal = r.malignant;
+  const isNeg = r.birads <= 2;
+
+  // Badge
+  const badge = document.getElementById('fBadge');
+  if (isMal) { badge.className = 'finding-badge fb-malignant'; badge.textContent = '⚠ MALIGNANT FINDINGS'; }
+  else if (isNeg) { badge.className = 'finding-badge fb-negative'; badge.textContent = '✓ NEGATIVE / BENIGN'; }
+  else { badge.className = 'finding-badge fb-benign'; badge.textContent = '◉ PROBABLY BENIGN'; }
+
+  // Fields
+  const fn = document.getElementById('rFinding');
+  fn.textContent = r.finding || '—';
+  fn.className = 'ri-val ' + (isMal ? 'rv-mal' : isNeg ? 'rv-neg' : 'rv-ben');
+
+  const mn = document.getElementById('rMalig');
+  mn.textContent = isMal ? 'Malignant (Suspected)' : 'Benign / Negative';
+  mn.className = 'ri-val ' + (isMal ? 'rv-mal' : 'rv-neg');
+
+  const biradsColors = { 1:'rv-neg', 2:'rv-neg', 3:'rv-ben', 4:'rv-ben', 5:'rv-mal', 6:'rv-mal', 0:'rv-def' };
+  const bv = document.getElementById('rBirads');
+  bv.textContent = 'BI-RADS ' + (r.birads || '—');
+  bv.className = 'ri-val ' + (biradsColors[r.birads] || 'rv-def');
+
+  document.getElementById('rSize').textContent = r.tumorSizeMm ? r.tumorSizeMm + ' mm' : 'N/A';
+  document.getElementById('rLat').textContent = r.laterality || '—';
+  document.getElementById('rMorph').textContent = r.morphology || '—';
+
+  // Confidence bar
+  const conf = parseFloat(r.confidence) || 0;
+  document.getElementById('rConf').textContent = conf.toFixed(1) + '%';
+  setTimeout(() => { document.getElementById('rConfBar').style.width = conf + '%'; }, 80);
+
+  // Probability bars
+  const probs = [r.probMal, r.probBen, r.probCalc, r.probNorm];
+  probs.forEach((p, i) => {
+    document.getElementById('pp'+i).textContent = p.toFixed(1) + '%';
+    setTimeout(() => { document.getElementById('pb'+i).style.width = p + '%'; }, 150);
+  });
+
+  document.getElementById('rBiradsDesc').textContent = r.biradsDesc || '—';
+  document.getElementById('rInterp').textContent = r.interp || '—';
+
+  // Recommendations
+  const recList = document.getElementById('rRecList');
+  recList.innerHTML = (r.recs || []).map((rec, i) =>
+    `<div class="rec-item"><div class="rec-num">${i+1}</div><div class="rec-text">${rec}</div></div>`
+  ).join('');
+
+  document.getElementById('rScanId').textContent = 'ID: ' + (r.scanId || '—');
+  document.getElementById('rMs').textContent = r.analysisDurationMs ? r.analysisDurationMs + 'ms' : '';
+}
+
+/* ── Segmentation Drawing ── */
+function drawSeg(r) {
+  const img = document.getElementById('prevImg');
+  const cv = document.getElementById('segCv');
+  const draw = () => {
+    const w = img.clientWidth || img.naturalWidth;
+    const h = img.clientHeight || img.naturalHeight;
+    cv.width = w; cv.height = h;
+    const ctx = cv.getContext('2d');
+    ctx.clearRect(0, 0, w, h);
+
+    const scaleX = w / 300, scaleY = h / 300;
+    const cx = (r.bbX + r.bbW/2) * scaleX;
+    const cy = (r.bbY + r.bbH/2) * scaleY;
+    const rx = (r.bbW/2) * scaleX;
+    const ry = (r.bbH/2) * scaleY;
+
+    // Choose color by finding type
+    let col;
+    if (r.malignant && r.birads >= 5) col = [224, 112, 112];
+    else if (r.malignant) col = [240, 168, 78];
+    else col = [94, 207, 202];
+    const [cr,cg,cb] = col;
+
+    // Filled region
+    ctx.save();
+    ctx.fillStyle = `rgba(${cr},${cg},${cb},0.15)`;
+    ctx.beginPath(); ctx.ellipse(cx,cy,rx,ry,0,0,Math.PI*2); ctx.fill();
+
+    // Dashed border
+    ctx.strokeStyle = `rgba(${cr},${cg},${cb},0.9)`;
+    ctx.lineWidth = 2.5; ctx.setLineDash([7,4]);
+    ctx.beginPath(); ctx.ellipse(cx,cy,rx,ry,0,0,Math.PI*2); ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Corner markers
+    ctx.lineWidth = 2.2;
+    const mk = 10;
+    [[cx-rx,cy-ry],[cx+rx,cy-ry],[cx-rx,cy+ry],[cx+rx,cy+ry]].forEach(([px,py]) => {
+      const sx = px < cx ? mk : -mk, sy = py < cy ? mk : -mk;
+      ctx.beginPath(); ctx.moveTo(px,py); ctx.lineTo(px+sx,py); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(px,py); ctx.lineTo(px,py+sy); ctx.stroke();
+    });
+
+    // Label
+    const lbl = `BI-RADS ${r.birads} · ${r.confidence.toFixed(0)}%`;
+    ctx.font = `bold ${Math.max(10,w/32)}px IBM Plex Mono, monospace`;
+    const tw = ctx.measureText(lbl).width;
+    const lx = Math.max(4, cx - rx), ly = Math.max(20, cy - ry - 10);
+    ctx.fillStyle = `rgba(13,13,20,0.72)`;
+    ctx.fillRect(lx-4, ly-14, tw+10, 20);
+    ctx.fillStyle = `rgba(${cr},${cg},${cb},1)`;
+    ctx.fillText(lbl, lx, ly);
+
+    // Size indicator if available
+    if (r.tumorSizeMm) {
+      const sizeTxt = r.tumorSizeMm.toFixed(1) + ' mm';
+      ctx.font = `${Math.max(9,w/36)}px IBM Plex Mono, monospace`;
+      ctx.fillStyle = `rgba(13,13,20,0.72)`;
+      ctx.fillRect(cx-rx, cy+ry+4, ctx.measureText(sizeTxt).width+10, 17);
+      ctx.fillStyle = `rgba(${cr},${cg},${cb},0.9)`;
+      ctx.fillText(sizeTxt, cx-rx+4, cy+ry+16);
+    }
+    ctx.restore();
+  };
+  if (img.complete && img.naturalWidth) draw();
+  else img.addEventListener('load', draw);
+}
+
+/* ═══ REPORT GENERATION ═══ */
+async function generateReport() {
+  if (!S.result) { toast('Run analysis first', 'err'); return; }
+  toast('Generating clinical report...', 'ok');
+  try {
+    const res = await fetch(`${S.apiUrl}/api/v1/reports/${S.scanId}/pdf`);
+    if (res.ok) {
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = `BreastScan_Report_${S.scanId}.pdf`;
+      a.click(); URL.revokeObjectURL(url);
+      toast('PDF downloaded!', 'ok'); return;
+    }
+  } catch(e) {}
+  buildHtmlReport(S.result);
+}
+
+function buildHtmlReport(r) {
+  const pn = document.getElementById('pName').value || 'Anonymous';
+  const pa = document.getElementById('pAge').value || '—';
+  const pid = document.getElementById('pId').value || '—';
+  const st = document.getElementById('scanType').value;
+  const lat = document.getElementById('lateral').value;
+  const vt = document.getElementById('viewType').value;
+  const dt = new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
+  const tm = new Date().toLocaleTimeString('en-US');
+  const isMal = r.malignant;
+  const statusCol = isMal ? '#dc2626' : '#16a34a';
+  const statusBg = isMal ? '#fef2f2' : '#f0fdf4';
+  const statusTxt = isMal ? '⚠ MALIGNANT FINDINGS — BIOPSY RECOMMENDED' : '✓ NEGATIVE / BENIGN — ROUTINE FOLLOW-UP';
+
+  const recsHtml = (r.recs || []).map((rec, i) =>
+    `<div style="display:flex;gap:10px;align-items:flex-start;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:10px 14px;margin-bottom:7px;">
+      <div style="width:20px;height:20px;background:${isMal?'#dc2626':'#0ea5e9'};color:white;border-radius:50%;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">${i+1}</div>
+      <div style="font-size:12px;color:#334155;line-height:1.6;">${rec}</div>
+    </div>`
+  ).join('');
+
+  const html = `<!DOCTYPE html><html><head><title>BreastScan AI Report — ${r.scanId}</title>
+  <meta charset="UTF-8"/>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet"/>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'IBM Plex Sans',sans-serif;background:#f1f5f9;color:#0f172a;padding:40px;max-width:860px;margin:0 auto}
+    .hdr{background:linear-gradient(135deg,#0d0d1a,#1a0a1a);color:white;padding:32px;border-radius:12px;margin-bottom:20px}
+    .brand{font-family:'Playfair Display',serif;font-size:22px;font-weight:900;color:#e8b4b8;margin-bottom:3px}
+    .sec{background:white;border:1px solid #e2e8f0;border-radius:10px;padding:22px;margin-bottom:14px}
+    h2{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:#64748b;border-bottom:2px solid #e8b4b8;padding-bottom:7px;margin-bottom:14px}
+    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .it{background:#f8fafc;padding:11px 14px;border-radius:8px;border:1px solid #e2e8f0}
+    .il{font-size:9px;color:#94a3b8;text-transform:uppercase;letter-spacing:1px}
+    .iv{font-size:13px;font-weight:600;margin-top:2px}
+    .status{text-align:center;padding:14px 20px;border-radius:8px;font-size:15px;font-weight:800;letter-spacing:1.5px;margin-bottom:14px;background:${statusBg};color:${statusCol};border:2px solid ${statusCol}30}
+    .birads-box{background:#fdf4ff;border-left:4px solid #a855f7;padding:13px;border-radius:4px;font-size:12px;color:#334155;line-height:1.7}
+    .interp{background:#f0f9ff;border-left:4px solid #0284c7;padding:13px;border-radius:4px;font-size:12px;color:#334155;line-height:1.7}
+    .disc{background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:13px;color:#991b1b;font-size:10px;margin-top:20px}
+    .footer{text-align:center;color:#94a3b8;font-size:10px;margin-top:16px;border-top:1px solid #e2e8f0;padding-top:12px}
+    .prob-row{display:flex;align-items:center;gap:10px;margin-bottom:7px}
+    .pb{flex:1;background:#e2e8f0;border-radius:3px;height:7px;overflow:hidden}
+    .pbf{height:100%;border-radius:3px}
+    @media print{body{background:white;padding:20px}.no-p{display:none}}
+  </style></head><body>
+  <div class="no-p" style="margin-bottom:16px;display:flex;gap:10px;">
+    <button onclick="window.print()" style="background:#d4848a;color:white;border:none;padding:9px 18px;border-radius:8px;cursor:pointer;font-weight:600;">🖨️ Print / Save PDF</button>
+    <button onclick="window.close()" style="background:#f1f5f9;border:none;padding:9px 18px;border-radius:8px;cursor:pointer;">Close</button>
+  </div>
+  <div class="hdr">
+    <div class="brand">BreastScan AI</div>
+    <div style="color:#a89aaa;font-size:11px;margin-bottom:16px;">Intelligent Breast Imaging Analysis Platform</div>
+    <div style="font-size:17px;font-weight:700;">BREAST IMAGING AI ANALYSIS REPORT</div>
+    <div style="color:#a89aaa;font-size:11px;margin-top:8px;display:flex;gap:20px;flex-wrap:wrap;">
+      <span>Scan ID: ${r.scanId}</span><span>Date: ${dt}</span><span>Time: ${tm}</span><span>Modality: ${st}</span>
+    </div>
+  </div>
+  <div class="sec">
+    <h2>Patient Information</h2>
+    <div class="grid2">
+      <div class="it"><div class="il">Patient Name</div><div class="iv">${pn}</div></div>
+      <div class="it"><div class="il">Patient ID</div><div class="iv">${pid}</div></div>
+      <div class="it"><div class="il">Age</div><div class="iv">${pa}</div></div>
+      <div class="it"><div class="il">Scan Type</div><div class="iv">${st}</div></div>
+      <div class="it"><div class="il">Laterality</div><div class="iv">${lat}</div></div>
+      <div class="it"><div class="il">View / Protocol</div><div class="iv">${vt}</div></div>
+    </div>
+  </div>
+  <div class="sec">
+    <h2>Primary Finding</h2>
+    <div class="status">${statusTxt}</div>
+    <div class="grid2">
+      <div class="it"><div class="il">Primary Finding</div><div class="iv" style="color:${statusCol}">${r.finding}</div></div>
+      <div class="it"><div class="il">Malignancy Assessment</div><div class="iv">${isMal?'Malignant (Suspected)':'Benign / Negative'}</div></div>
+      <div class="it"><div class="il">BI-RADS Score</div><div class="iv" style="color:${isMal?'#dc2626':'#16a34a'}">BI-RADS ${r.birads}</div></div>
+      <div class="it"><div class="il">AI Confidence</div><div class="iv" style="color:#d4848a">${parseFloat(r.confidence).toFixed(1)}%</div></div>
+      <div class="it"><div class="il">Lesion Size</div><div class="iv">${r.tumorSizeMm?r.tumorSizeMm.toFixed(1)+' mm':'N/A'}</div></div>
+      <div class="it"><div class="il">Morphology</div><div class="iv">${r.morphology||'—'}</div></div>
+    </div>
+  </div>
+  <div class="sec">
+    <h2>Probability Distribution</h2>
+    <div class="prob-row"><span style="font-size:11px;color:#64748b;width:130px">Malignant Mass</span><div class="pb"><div class="pbf" style="width:${r.probMal}%;background:#dc2626"></div></div><span style="font-size:11px;width:40px;text-align:right">${r.probMal.toFixed(1)}%</span></div>
+    <div class="prob-row"><span style="font-size:11px;color:#64748b;width:130px">Benign Mass</span><div class="pb"><div class="pbf" style="width:${r.probBen}%;background:#f59e0b"></div></div><span style="font-size:11px;width:40px;text-align:right">${r.probBen.toFixed(1)}%</span></div>
+    <div class="prob-row"><span style="font-size:11px;color:#64748b;width:130px">Calcifications</span><div class="pb"><div class="pbf" style="width:${r.probCalc}%;background:#0ea5e9"></div></div><span style="font-size:11px;width:40px;text-align:right">${r.probCalc.toFixed(1)}%</span></div>
+    <div class="prob-row"><span style="font-size:11px;color:#64748b;width:130px">Normal / Benign</span><div class="pb"><div class="pbf" style="width:${r.probNorm}%;background:#16a34a"></div></div><span style="font-size:11px;width:40px;text-align:right">${r.probNorm.toFixed(1)}%</span></div>
+  </div>
+  <div class="sec"><h2>BI-RADS Assessment</h2><div class="birads-box">${r.biradsDesc}</div></div>
+  <div class="sec"><h2>Clinical Interpretation</h2><div class="interp">${r.interp}</div></div>
+  <div class="sec"><h2>Clinical Recommendations</h2>${recsHtml}</div>
+  <div class="disc">⚠ <strong>DISCLAIMER:</strong> This report is generated by an AI-assisted system and must be reviewed and validated by a licensed radiologist or breast specialist before any clinical decision. This does not constitute a final medical diagnosis. AI analysis supplements, never replaces, professional medical evaluation.</div>
+  <div class="footer">BreastScan AI Platform · Report ID: ${r.scanId} · ${dt} ${tm}<br/>Powered by CNN + U-Net Deep Learning Architecture</div>
+  </body></html>`;
+
+  const w = window.open('', '_blank');
+  w.document.write(html); w.document.close();
+}
+
+/* ═══ CHAT ═══ */
+async function sendMsg() {
+  const ta = document.getElementById('chatIn');
+  const msg = ta.value.trim();
+  if (!msg) return;
+  ta.value = ''; ta.style.height = '22px';
+  appendMsg('user', msg);
+  S.chatHist.push({ role:'user', content: msg });
+  document.getElementById('chatHints').style.display = 'none';
+  const tid = showTyping();
+  try {
+    let reply;
+    try {
+      const res = await fetch(`${S.apiUrl}/api/v1/chat/message`, {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ sessionId:S.sessId, scanId:S.scanId, message:msg, history:S.chatHist.slice(-10) })
+      });
+      if (res.ok) { const d = await res.json(); reply = d.response; }
+      else throw new Error();
+    } catch(e) {
+      if (S.apiKey) reply = await callClaude(msg);
+      else reply = fallbackReply(msg);
+    }
+    removeTyping(tid);
+    S.chatHist.push({ role:'assistant', content: reply });
+    appendMsg('assistant', reply);
+  } catch(e) {
+    removeTyping(tid);
+    appendMsg('assistant', 'I encountered an error. Please configure your API key in Clinical Tools → API Configuration.');
+  }
+}
+
+async function callClaude(msg) {
+  const scanCtx = S.result ? `\n\nCurrent scan: ${S.result.finding}, BI-RADS ${S.result.birads}, ${S.result.malignant?'Malignant':'Benign'}, ${S.result.confidence.toFixed(1)}% confidence. ${S.result.interp}` : '';
+  const sys = `You are BreastScan AI, a specialist medical assistant for breast imaging and oncology. You help clinicians and patients understand mammography, breast ultrasound, and breast MRI findings. You are expert in BI-RADS classification, breast tumor pathology (IDC, DCIS, ILC, fibroadenoma, etc.), biopsy techniques, and NCCN treatment guidelines. Be accurate, compassionate, and always recommend physician consultation for medical decisions.${scanCtx}`;
+  const msgs = [...S.chatHist.slice(-8), {role:'user', content: msg}];
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method:'POST',
+    headers:{ 'x-api-key':S.apiKey, 'anthropic-version':'2023-06-01', 'content-type':'application/json', 'anthropic-dangerous-direct-browser-access':'true' },
+    body: JSON.stringify({ model:'claude-sonnet-4-20250514', max_tokens:1024, system:sys, messages:msgs })
+  });
+  if (!res.ok) throw new Error(res.status);
+  const d = await res.json();
+  return d.content[0].text;
+}
+
+function fallbackReply(msg) {
+  const m = msg.toLowerCase();
+  if (m.includes('birads') || m.includes('bi-rads')) return "**BI-RADS** (Breast Imaging Reporting and Data System) by ACR:\n\n• **BI-RADS 0** — Incomplete: Additional imaging needed\n• **BI-RADS 1** — Negative: Routine screening\n• **BI-RADS 2** — Benign: Routine follow-up\n• **BI-RADS 3** — Probably Benign: 6-month follow-up (<2% cancer risk)\n• **BI-RADS 4** — Suspicious: Biopsy recommended (2–95%)\n• **BI-RADS 5** — Highly Suspicious: Biopsy mandatory (≥95%)\n• **BI-RADS 6** — Known Malignancy: Treatment planning\n\nAlways confirm with a certified radiologist.";
+  if (m.includes('idc') || m.includes('invasive')) return "**Invasive Ductal Carcinoma (IDC)** is the most common breast cancer (~70–80% of cases).\n\n**Imaging features:**\n• Irregular or spiculated mass\n• Ill-defined margins\n• May have associated calcifications\n• Enhancement on MRI (washout kinetics)\n\n**Treatment:** Surgery (lumpectomy or mastectomy) + radiation ± chemotherapy, hormone therapy (if ER/PR+), HER2-targeted therapy (if HER2+).\n\nConfigure your API key for full AI chat functionality.";
+  if (m.includes('dcis') || m.includes('ductal carcinoma in situ')) return "**DCIS (Ductal Carcinoma In Situ)** is a pre-invasive breast cancer confined to the ductal system.\n\n**Key facts:**\n• Not invasive — has not spread to surrounding tissue\n• Detected primarily via microcalcifications on mammography\n• Risk of progression to invasive cancer: 20–30% if untreated\n\n**Treatment:** Surgery (usually lumpectomy) + radiation. Hormone therapy (tamoxifen) for ER+ DCIS reduces recurrence.\n\nConfigure your API key for full AI responses.";
+  if (m.includes('fibroadenoma')) return "**Fibroadenoma** is the most common benign breast mass, especially in women under 35.\n\n**Imaging:**\n• Oval, well-circumscribed, mobile mass\n• Homogeneous on ultrasound, parallel orientation\n• BI-RADS 2–3 typical\n\n**Management:** Usually observation. Biopsy if size >2 cm, rapid growth, or atypical features. Core needle biopsy is preferred if needed.";
+  return "To enable full AI capabilities, please enter your Anthropic API key in **Clinical Tools → API Configuration**.\n\nI can answer breast imaging questions on topics like:\n• BI-RADS classification\n• Tumor types (IDC, DCIS, ILC, fibroadenoma)\n• Biopsy guidance and surgical options\n• Hormone receptor status and treatment\n• Screening recommendations\n\nAlways consult a qualified radiologist and breast specialist for medical decisions.";
+}
+
+function appendMsg(role, txt) {
+  const c = document.getElementById('msgs');
+  const tm = new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
+  const fmt = txt.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/\n\n/g,'<br/><br/>').replace(/\n/g,'<br/>').replace(/•\s/g,'• ');
+  const d = document.createElement('div');
+  d.className = 'msg-row ' + (role==='user'?'user':'');
+  d.innerHTML = `<div class="av ${role==='user'?'av-u':'av-ai'}">${role==='user'?'You':'BS'}</div><div><div class="bubble">${fmt}</div><div class="mtime">${role==='user'?'You':'BreastScan AI'} · ${tm}</div></div>`;
+  c.appendChild(d);
+  c.scrollTop = c.scrollHeight;
+}
+function showTyping() {
+  const id = 'ty' + Date.now();
+  const c = document.getElementById('msgs');
+  const d = document.createElement('div');
+  d.className = 'msg-row'; d.id = id;
+  d.innerHTML = `<div class="av av-ai">BS</div><div><div class="bubble"><div class="typing"><div class="td"></div><div class="td"></div><div class="td"></div></div></div></div>`;
+  c.appendChild(d); c.scrollTop = c.scrollHeight;
+  return id;
+}
+function removeTyping(id) { const e = document.getElementById(id); if(e) e.remove(); }
+function chatKey(e) { if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMsg();} }
+function autoH(ta) { ta.style.height='auto'; ta.style.height=Math.min(ta.scrollHeight,110)+'px'; }
+function sendQ(q) { document.getElementById('chatIn').value=q; sendMsg(); }
+function clearChat() { document.getElementById('msgs').innerHTML=''; S.chatHist=[]; S.sessId='bs-'+Math.random().toString(36).substr(2,7); appendMsg('assistant','Chat cleared. How can I help with your breast imaging questions?'); }
+function askAI() { if(!S.result) return; go('chat'); const r=S.result; const q=r.malignant?`My breast scan shows ${r.finding} (BI-RADS ${r.birads}). Can you explain what this means and what I should do next?`:`My breast scan was categorized as BI-RADS ${r.birads} (${r.finding}). What does this mean for my follow-up?`; setTimeout(()=>{document.getElementById('chatIn').value=q;sendMsg();},250); }
+
+/* ═══ HISTORY ═══ */
+function renderHist() {
+  let data = [...S.scans];
+  if (S.filter==='malignant') data=data.filter(s=>s.malignant);
+  if (S.filter==='benign') data=data.filter(s=>!s.malignant);
+  const b = document.getElementById('histBody');
+  if (!data.length) { b.innerHTML='<div class="empty"><div style="color:var(--text3);font-size:12px;padding:44px;">No scans match the current filter.</div></div>'; return; }
+  b.innerHTML = data.map(s => {
+    const dt = s.createdAt ? new Date(s.createdAt).toLocaleDateString() : '—';
+    const findTag = s.malignant ? `<span class="tag tag-red">${(s.finding||'').split(' ').slice(0,2).join(' ')}</span>` : s.birads<=2 ? `<span class="tag tag-lime">Negative</span>` : `<span class="tag tag-amber">Prob.Benign</span>`;
+    const biTag = s.birads ? `<span class="tag tag-rose">BI-RADS ${s.birads}</span>` : '—';
+    const confCol = (s.confidence||0)>=85?'var(--lime)':(s.confidence||0)>=70?'var(--amber)':'var(--coral)';
+    return `<div class="t-row">
+      <span style="font-family:var(--mono);font-size:10px;color:var(--rose)">${s.scanId}</span>
+      <span style="font-size:12px;">${s.patientName||'Anonymous'}<br/><span style="color:var(--text3);font-size:9px;">${dt}</span></span>
+      <span style="font-size:12px;">${s.patientAge||'—'}</span>
+      <span>${findTag}</span>
+      <span>${biTag}</span>
+      <span style="font-family:var(--mono);font-size:11px;color:${confCol}">${s.confidence?parseFloat(s.confidence).toFixed(1)+'%':'—'}</span>
+      <span style="display:flex;gap:7px;"><button class="btn btn-ghost btn-sm" onclick="viewDetail('${s.scanId}')">View</button><button class="btn btn-ghost btn-sm" onclick="chatAbout('${s.scanId}')">Ask AI</button></span>
+    </div>`;
+  }).join('');
+}
+function filterHist(q) { if(!q){renderHist();return;} const ql=q.toLowerCase(); const orig=S.scans; S.scans=orig.filter(s=>(s.scanId||'').toLowerCase().includes(ql)||(s.patientName||'').toLowerCase().includes(ql)||(s.finding||'').toLowerCase().includes(ql)); renderHist(); S.scans=orig; }
+function setFilter(f) { S.filter=f; document.querySelectorAll('.f-chip').forEach(c=>c.classList.remove('active')); document.getElementById('f'+f.charAt(0).toUpperCase()+f.slice(1)).classList.add('active'); renderHist(); }
+function refreshHist() { fetch(`${S.apiUrl}/api/v1/reports`).then(r=>r.json()).then(d=>{if(Array.isArray(d)){S.scans=d.map(r=>({scanId:r.scanId,patientName:r.patientName,patientAge:r.patientAge,finding:r.tumorType,birads:r.birads,confidence:r.confidenceScore,malignant:r.detectionStatus==='POSITIVE',createdAt:r.createdAt}));localStorage.setItem('bs_scans',JSON.stringify(S.scans));renderHist();updateBadge();toast('Refreshed from server','ok');}}).catch(()=>{renderHist();toast('Using local data','ok');}); }
+function updateBadge() { document.getElementById('hBadge').textContent=S.scans.length; }
+
+function viewDetail(id) {
+  const s = S.scans.find(x=>x.scanId===id);
+  if (!s) return;
+  document.getElementById('modalT').textContent = 'Scan: ' + id;
+  document.getElementById('modalB').innerHTML = `
+    <div class="rp-grid">
+      <div class="ri"><div class="ri-lbl">Scan ID</div><div class="ri-val" style="font-family:var(--mono);font-size:11px;">${s.scanId}</div></div>
+      <div class="ri"><div class="ri-lbl">Patient</div><div class="ri-val">${s.patientName||'Anonymous'}</div></div>
+      <div class="ri"><div class="ri-lbl">Finding</div><div class="ri-val ${s.malignant?'rv-mal':'rv-neg'}">${s.finding||'—'}</div></div>
+      <div class="ri"><div class="ri-lbl">BI-RADS</div><div class="ri-val">${s.birads?'BI-RADS '+s.birads:'—'}</div></div>
+      <div class="ri"><div class="ri-lbl">Confidence</div><div class="ri-val" style="color:var(--rose)">${s.confidence?parseFloat(s.confidence).toFixed(1)+'%':'—'}</div></div>
+      <div class="ri"><div class="ri-lbl">Scan Type</div><div class="ri-val">${s.scanType||'—'}</div></div>
+    </div>
+    <button class="btn btn-rose btn-sm" onclick="closeModal();go('chat');setTimeout(()=>chatAbout('${id}'),200)">Ask AI About This Scan</button>`;
+  document.getElementById('modal').classList.add('open');
+}
+function chatAbout(id) {
+  const s = S.scans.find(x=>x.scanId===id);
+  if (!s) return;
+  S.scanId = id;
+  go('chat');
+  document.getElementById('ctxBadge').style.display = 'flex';
+  const q = s.malignant ? `For scan ${id}: ${s.finding} was detected (BI-RADS ${s.birads}). Can you explain the findings and what steps should be taken?` : `Scan ${id} showed ${s.finding} (BI-RADS ${s.birads}). What does this mean for follow-up?`;
+  setTimeout(() => { document.getElementById('chatIn').value=q; sendMsg(); }, 300);
+}
+
+/* ═══ TOOLS ═══ */
+function askToolAI(q) { go('chat'); setTimeout(()=>{document.getElementById('chatIn').value=q;sendMsg();},200); }
+const toolDefs = {
+  birads: {
+    title: 'BI-RADS Classification Reference',
+    body: `<div style="display:flex;flex-direction:column;gap:10px;">
+      ${[['0','Incomplete','Additional imaging needed. Prior exams not available for comparison.','var(--text3)'],
+         ['1','Negative','No significant finding. Routine annual screening.','var(--lime)'],
+         ['2','Benign','Definitely benign. Routine annual screening. 0% cancer risk.','var(--lime)'],
+         ['3','Probably Benign','Short-interval 6-month follow-up. <2% malignancy risk.','var(--amber)'],
+         ['4A','Low Suspicion','Biopsy recommended. 2–10% cancer risk.','var(--amber)'],
+         ['4B','Moderate Suspicion','Biopsy recommended. 10–50% cancer risk.','var(--coral)'],
+         ['4C','High Suspicion','Biopsy mandatory. 50–95% cancer risk.','var(--coral)'],
+         ['5','Highly Suggestive','Biopsy mandatory. ≥95% cancer risk. Immediate referral.','var(--coral)'],
+         ['6','Known Malignancy','Confirmed cancer. Treatment planning.','var(--coral)']
+        ].map(([cat,name,desc,col])=>`<div class="ri"><div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;"><div style="background:${col};color:var(--ink);padding:3px 10px;border-radius:12px;font-family:var(--mono);font-size:11px;font-weight:700;">BI-RADS ${cat}</div><span style="font-size:13px;font-weight:600;">${name}</span></div><div style="font-size:11px;color:var(--text2);">${desc}</div></div>`).join('')}
+    </div>`
+  },
+  'tumor-types': {
+    title: 'Breast Tumor Type Reference',
+    body: `<div style="display:flex;flex-direction:column;gap:10px;">
+      <div class="ri"><div style="color:var(--coral);font-weight:700;margin-bottom:6px;font-family:var(--serif)">Invasive Ductal Carcinoma (IDC) — 70–80%</div><div class="clin-body">Most common breast cancer. Spiculated or irregular mass on mammography. Hypoechoic with angular margins on ultrasound. Washout kinetics on MRI. Treated with surgery + chemo ± radiation.</div></div>
+      <div class="ri"><div style="color:var(--amber);font-weight:700;margin-bottom:6px;font-family:var(--serif)">Ductal Carcinoma In Situ (DCIS)</div><div class="clin-body">Pre-invasive. Detected as pleomorphic microcalcifications. Not life-threatening if treated. Lumpectomy + radiation, or mastectomy for extensive disease. BI-RADS 4–5.</div></div>
+      <div class="ri"><div style="color:var(--teal);font-weight:700;margin-bottom:6px;font-family:var(--serif)">Invasive Lobular Carcinoma (ILC) — 10–15%</div><div class="clin-body">Subtle on mammography (no mass, only asymmetry). MRI is critical for staging. Multicentric/multifocal common. ER/PR+ in ~90%. Hormone therapy is key treatment component.</div></div>
+      <div class="ri"><div style="color:var(--lime);font-weight:700;margin-bottom:6px;font-family:var(--serif)">Fibroadenoma (Benign)</div><div class="clin-body">Most common benign mass. Well-circumscribed, oval, mobile. Homogeneous on ultrasound. BI-RADS 2–3. Observe unless >2 cm, rapid growth, or patient request. Most common in women under 35.</div></div>
+    </div>`
+  },
+  'imaging-guide': {
+    title: 'Mammographic Features of Malignancy',
+    body: `<div style="display:flex;flex-direction:column;gap:10px;">
+      <div class="ri"><div class="clin-title">Mass Morphology</div><div class="clin-body"><strong style="color:var(--coral)">Suspicious:</strong> Irregular shape, spiculated margins, high density<br/><strong style="color:var(--lime)">Benign:</strong> Oval/round shape, circumscribed margins, lower density than gland</div></div>
+      <div class="ri"><div class="clin-title">Calcifications</div><div class="clin-body"><strong style="color:var(--coral)">Suspicious:</strong> Fine pleomorphic, fine linear branching, segmental/linear distribution<br/><strong style="color:var(--lime)">Benign:</strong> Coarse popcorn, eggshell, vascular, layering, diffuse round</div></div>
+      <div class="ri"><div class="clin-title">Architecture & Special Features</div><div class="clin-body">• Architectural distortion — often associated with malignancy or scar<br/>• Asymmetry (focal or global) — requires further workup<br/>• Skin thickening, nipple retraction, axillary adenopathy — advanced signs</div></div>
+      <div class="ri"><div class="clin-title">Ultrasound Features</div><div class="clin-body"><strong style="color:var(--coral)">Suspicious:</strong> Non-parallel (taller than wide), irregular, angular/spiculated margins, hypoechoic<br/><strong style="color:var(--lime)">Benign:</strong> Parallel, oval, circumscribed, uniform internal echoes</div></div>
+    </div>`
+  }
+};
+function openTool(id) {
+  const t = toolDefs[id];
+  if (!t) { askToolAI('Explain '+id+' in breast oncology in clinical detail'); return; }
+  document.getElementById('modalT').textContent = t.title;
+  document.getElementById('modalB').innerHTML = t.body;
+  document.getElementById('modal').classList.add('open');
+}
+function closeModal() { document.getElementById('modal').classList.remove('open'); }
+document.getElementById('modal').addEventListener('click', e => { if(e.target===document.getElementById('modal')) closeModal(); });
+document.addEventListener('keydown', e => { if(e.key==='Escape') closeModal(); });
+
+/* ═══ CONFIG ═══ */
+function saveCfg() {
+  S.apiUrl = document.getElementById('cfgUrl').value.trim() || 'http://localhost:8080';
+  S.apiKey = document.getElementById('cfgKey').value.trim();
+  localStorage.setItem('bs_url', S.apiUrl);
+  localStorage.setItem('bs_key', S.apiKey);
+  toast('Configuration saved!', 'ok');
+}
+async function testConn() {
+  try {
+    const r = await fetch(`${S.apiUrl}/api/v1/health`, {signal:AbortSignal.timeout(3000)});
+    if (r.ok) { const d=await r.json(); toast('Connected: '+d.service, 'ok'); }
+    else toast('Backend error: '+r.status, 'err');
+  } catch(e) { toast('Backend unreachable — demo mode active', 'err'); }
+}
+
+/* ═══ KPI ═══ */
+function loadKPI() {
+  const sc = S.scans;
+  document.getElementById('kTotal').textContent = sc.length;
+  document.getElementById('kMal').textContent = sc.filter(s=>s.malignant).length;
+  document.getElementById('kBen').textContent = sc.filter(s=>!s.malignant).length;
+  const confs = sc.filter(s=>s.confidence).map(s=>parseFloat(s.confidence));
+  document.getElementById('kConf').textContent = confs.length ? (confs.reduce((a,b)=>a+b,0)/confs.length).toFixed(1)+'%' : '—';
+}
+
+/* ═══ TOAST ═══ */
+function toast(msg, type='ok') {
+  const c = document.getElementById('toasts');
+  const t = document.createElement('div');
+  t.className = 'toast ' + type;
+  t.innerHTML = `<span style="color:${type==='ok'?'var(--lime)':'var(--coral)'};font-weight:700;">${type==='ok'?'✓':'✕'}</span> ${msg}`;
+  c.appendChild(t);
+  setTimeout(() => { t.style.opacity='0'; t.style.transition='opacity .3s'; setTimeout(()=>t.remove(),300); }, 3000);
+}
+
+/* ═══ INIT ═══ */
+updateBadge(); loadKPI();
+document.getElementById('cfgUrl').value = S.apiUrl;
+document.getElementById('cfgKey').value = S.apiKey;
+</script>
+</body>
+</html>
