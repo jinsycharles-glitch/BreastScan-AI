@@ -58,18 +58,7 @@ The main objective of this project is to support early breast cancer detection u
 * Hospital database integration
 
 ---
-## Screenshots
 
-### Home Page
-![Home Page](screenshots/01_home_page.png)
-
-### Prediction Result
-![Prediction Result](screenshots/02_prediction_result.png)
-
-### Prediction Report
-![Prediction Report](screenshots/03_prediction_report.png)
-
----
 
 ## Author
 
