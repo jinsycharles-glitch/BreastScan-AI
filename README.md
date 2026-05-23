@@ -49,7 +49,7 @@ The main objective of this project is to support early breast cancer detection u
 ## Screenshots
 
 ### Home Page
-![Home Page](01_home_page.png)
+![Home Page]
 
 ### Prediction Result
 ![Prediction Result](screenshots/02_prediction_result.png)
